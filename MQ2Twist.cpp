@@ -289,8 +289,7 @@ Changes:
 
 */ 
 
-#include "../MQ2Plugin.h"
-using namespace std;
+#include <MQ2Plugin.h>
 #include <vector>
 
 PreSetup("MQ2Twist"); 
@@ -376,7 +375,7 @@ int _ITEMCLICK::operator<(const _ITEMCLICK &in) const
     return(this->slot < in.slot);
 }
 
-vector <_ITEMCLICK> ItemClick;
+std::vector<_ITEMCLICK> ItemClick;
 
 bool MQ2TwistEnabled = false; 
 int LONGSONG_ADJUST=1;                // In TICKS, not seconds.  Used for long songs (greater than 3 ticks in duration). See docs. 
@@ -593,7 +592,7 @@ void SingCommand(PSPAWNINFO pChar, PCHAR szLine)
     char szMsg[MAX_STRING]={0}; 
     int Index; 
     unsigned int fInd;
-    register unsigned int x;
+    unsigned int x;
 
     GetArg(szTemp,szLine,1); 
     Index=atoi(szTemp); 
@@ -911,7 +910,7 @@ void TwistCommand(PSPAWNINFO pChar, PCHAR szLine)
         Song[NumSongs]=atoi(szTemp); 
         if ((Song[NumSongs]>0 && Song[NumSongs]<=NUM_SPELL_GEMS) || (Song[NumSongs]>=CLICK_START && Song[NumSongs]<=CLICK_START+CLICK_MAX-1)) { 
             bool IsDisabled = false;
-            register unsigned int x;
+            unsigned int x;
             if (Song[NumSongs]>NUM_SPELL_GEMS) {
                 fInd = ItemClick.size();
                 for(x=0; x<ItemClick.size(); x++) {
@@ -1009,13 +1008,11 @@ bool CheckCharState()
         } 
     } 
 
-    if (pCastingWnd) { 
-        PCSIDLWND pCastingWindow = (PCSIDLWND)pCastingWnd; 
-        if (pCastingWindow->IsVisible() == true) 
-            return false; 
-        // Don't try to twist if the casting window is up, it implies the previous song 
-        // is still casting, or the user is manually casting a song between our twists 
-    } 
+	// Don't try to twist if the casting window is up, it implies the previous song 
+	// is still casting, or the user is manually casting a song between our twists 
+    if (pCastingWnd && pCastingWnd->IsVisible() == true)
+        return false; 
+    
     return true; 
 } 
 
@@ -1040,8 +1037,9 @@ class MQ2TwistType : public MQ2Type
 
         ~MQ2TwistType() {}
 
-        bool GetMember(MQ2VARPTR VarPtr, PCHAR Member, PCHAR Index, MQ2TYPEVAR &Dest) { 
-            PMQ2TYPEMEMBER pMember=MQ2TwistType::FindMember(Member); 
+        bool GetMember(MQVarPtr VarPtr, PCHAR Member, PCHAR Index, MQTypeVar& Dest) override
+        {
+	        MQTypeMember* pMember = MQ2TwistType::FindMember(Member); 
             if (!pMember) 
                 return false; 
             switch((TwistMembers)pMember->ID) { 
@@ -1093,7 +1091,8 @@ class MQ2TwistType : public MQ2Type
             return false; 
         } 
 
-        bool ToString(MQ2VARPTR VarPtr, PCHAR Destination)  { 
+        bool ToString(MQVarPtr VarPtr, PCHAR Destination) override
+        { 
             if (bTwist) 
                 strcpy_s(Destination,MAX_STRING,"TRUE"); 
             else 
@@ -1101,16 +1100,18 @@ class MQ2TwistType : public MQ2Type
             return true; 
         } 
 
-        bool FromData(MQ2VARPTR &VarPtr, MQ2TYPEVAR &Source) { 
+        bool FromData(MQVarPtr& VarPtr, MQTypeVar& Source) override
+        { 
             return false; 
-        } 
+        }
 
-        bool FromString(MQ2VARPTR &VarPtr, PCHAR Source) { 
+        bool FromString(MQVarPtr& VarPtr, PCHAR Source) override
+        { 
             return false; 
         } 
 }; 
 
-BOOL dataTwist(PCHAR szName, MQ2TYPEVAR &Dest) 
+bool dataTwist(const char* szName, MQTypeVar& Dest) 
 { 
     Dest.DWord=1; 
     Dest.Type=pTwistType; 
