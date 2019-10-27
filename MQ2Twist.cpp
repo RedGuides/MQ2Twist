@@ -289,7 +289,7 @@ Changes:
 
 */ 
 
-#include <MQ2Plugin.h>
+#include <mq/Plugin.h>
 #include <vector>
 
 PreSetup("MQ2Twist"); 
