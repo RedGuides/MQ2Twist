@@ -930,7 +930,7 @@ void TwistCommand(PSPAWNINFO pChar, PCHAR szLine)
             else { 
                 sprintf_s(szMsg, " \ag%s \am- \at", szTemp); 
                 if (Song[NumSongs]<=NUM_SPELL_GEMS) { 
-                    pSpell=GetSpellByID(GetCharInfo2()->MemorizedSpells[Song[NumSongs]-1]); 
+                    pSpell=GetSpellByID(GetPcProfile()->MemorizedSpells[Song[NumSongs]-1]); 
                     if (altTwist) 
                         SongNextCast[NumSongs] = 0; 
                     if (pSpell) 
@@ -1242,7 +1242,7 @@ PLUGIN_API VOID OnPulse(VOID)
                         return;
                     }
                     MQ2TwistDoCommand(NULL,szTemp); 
-                    pSpell=GetSpellByID(GetCharInfo2()->MemorizedSpells[Song[CurrSong-1]-1]); 
+                    pSpell=GetSpellByID(GetPcProfile()->MemorizedSpells[Song[CurrSong-1]-1]); 
                     if(!pSpell) { 
                         WriteChatf("\arMQ2Twist\au::\arSongs not present - suspending twist.  /twist to resume."); 
                         bTwist = false; 
