@@ -1058,7 +1058,7 @@ class MQ2TwistType : public MQ2Type
                     1 - Twisting
                     */
                     Dest.Int=bTwist;
-                    Dest.Type=pBoolType;
+                    Dest.Type=mq::datatypes::pBoolType;
                     return true;
                 case Next:
                     /* Returns: int
@@ -1071,7 +1071,7 @@ class MQ2TwistType : public MQ2Type
                         Dest.Int = -1;
                     if (!bTwist)
                         Dest.Int = 0;
-                    Dest.Type=pIntType;
+                    Dest.Type=mq::datatypes::pIntType;
                     return true;
                 case Current:
                     Dest.Int=HoldSong ? HoldSong : Song[PrevSong-1];
@@ -1079,7 +1079,7 @@ class MQ2TwistType : public MQ2Type
                         Dest.Int = -1;
                     if (!bTwist)
                         Dest.Int = 0;
-                    Dest.Type=pIntType;
+                    Dest.Type=mq::datatypes::pIntType;
                     return true;
                 case List:
                     /* Returns: string
@@ -1094,7 +1094,7 @@ class MQ2TwistType : public MQ2Type
                     }
 					strcpy_s(DataTypeTemp, MQ2TwistTypeTemp);
                     Dest.Ptr=&DataTypeTemp[0];
-                    Dest.Type=pStringType;
+                    Dest.Type=mq::datatypes::pStringType;
                     return true;
             }
             return false;
@@ -1159,7 +1159,7 @@ PLUGIN_API VOID OnPulse(VOID)
     char szTemp[MAX_STRING] = {0};
     char mzTemp[MAX_STRING] = {0};
     PSPELL pSpell;
-    int TmpRecastTimer, TmpSpellDuration;
+    int TmpRecastTimer;
     unsigned int fInd;
     bool Found;
 
@@ -1262,7 +1262,7 @@ PLUGIN_API VOID OnPulse(VOID)
                         TmpRecastTimer = 0;
                     else
                         TmpRecastTimer = (pSpell->RecastTime+100)/100;
-                    TmpSpellDuration = GetSpellDuration(pSpell,(PSPAWNINFO)pLocalPlayer)*60; // duration in 10's of a second
+                    const int TmpSpellDuration = GetSpellDuration(pSpell, pLocalPlayer)*60; // duration in 10's of a second
                     // duration > 18 secs
                     if (TmpSpellDuration > 180) {
                         WriteDebug("MQ2Twist::%s has long duration, recast adjusted by +%d.", pSpell->Name, (TmpSpellDuration - (LONGSONG_ADJUST*60)));
