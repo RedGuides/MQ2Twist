@@ -1046,7 +1046,7 @@ class MQ2TwistType : public MQ2Type
 
         ~MQ2TwistType() {}
 
-        bool GetMember(MQVarPtr VarPtr, PCHAR Member, PCHAR Index, MQTypeVar& Dest) override
+        virtual bool GetMember(MQVarPtr VarPtr, const char* Member, char* Index, MQTypeVar& Dest) override
         {
 	        MQTypeMember* pMember = MQ2TwistType::FindMember(Member);
             if (!pMember)
@@ -1114,7 +1114,7 @@ class MQ2TwistType : public MQ2Type
             return false;
         }
 
-        bool FromString(MQVarPtr& VarPtr, PCHAR Source) override
+        virtual bool FromString(MQVarPtr& VarPtr, const char* Source) override
         {
             return false;
         }
