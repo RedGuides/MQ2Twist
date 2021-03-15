@@ -1025,105 +1025,94 @@ bool CheckCharState()
     return true;
 }
 
-class MQ2TwistType *pTwistType=0;
-
 class MQ2TwistType : public MQ2Type
 {
-    public:
-        enum TwistMembers {
-            Twisting=1,
-            Next=2,
-            Current=3,
-            List=4,
-        };
+public:
+    enum class TwistMembers {
+        Twisting = 1,
+        Next,
+        Current,
+        List,
+    };
 
-        MQ2TwistType():MQ2Type("twist") {
-            TypeMember(Twisting);
-            TypeMember(Next);
-            TypeMember(Current);
-            TypeMember(List);
-        }
+    MQ2TwistType() : MQ2Type("twist") {
+        ScopedTypeMember(TwistMembers, Twisting);
+        ScopedTypeMember(TwistMembers, Next);
+        ScopedTypeMember(TwistMembers, Current);
+        ScopedTypeMember(TwistMembers, List);
+    }
 
-        ~MQ2TwistType() {}
-
-        virtual bool GetMember(MQVarPtr VarPtr, const char* Member, char* Index, MQTypeVar& Dest) override
-        {
-	        MQTypeMember* pMember = MQ2TwistType::FindMember(Member);
-            if (!pMember)
-                return false;
-            switch((TwistMembers)pMember->ID) {
-                case Twisting:
-                    /* Returns: bool
-                    0 - Not Twisting
-                    1 - Twisting
-                    */
-                    Dest.Int=bTwist;
-                    Dest.Type=mq::datatypes::pBoolType;
-                    return true;
-                case Next:
-                    /* Returns: int
-                    0 - Not Twisting
-                    -1 - Casting Item
-                    1-9 - Current Gem
-                    */
-                    Dest.Int=HoldSong ? HoldSong : Song[CurrSong-1];
-                    if (Dest.Int>NUM_SPELL_GEMS-1)
-                        Dest.Int = -1;
-                    if (!bTwist)
-                        Dest.Int = 0;
-                    Dest.Type=mq::datatypes::pIntType;
-                    return true;
-                case Current:
-                    Dest.Int=HoldSong ? HoldSong : Song[PrevSong-1];
-                    if (Dest.Int>NUM_SPELL_GEMS-1)
-                        Dest.Int = -1;
-                    if (!bTwist)
-                        Dest.Int = 0;
-                    Dest.Type=mq::datatypes::pIntType;
-                    return true;
-                case List:
-                    /* Returns: string
-                    Space separated list of gem and item #'s being twisted, in order
-                    */
-                    int a;
-                    char szTemp[MAX_STRING] = {0};
-                    char MQ2TwistTypeTemp[MAX_STRING] = {0};
-                    for (a=0; a<NumSongs; a++) {
-                        sprintf_s(szTemp, "%d ", Song[a]);
-                        strcat_s(MQ2TwistTypeTemp, szTemp);
-                    }
-					strcpy_s(DataTypeTemp, MQ2TwistTypeTemp);
-                    Dest.Ptr=&DataTypeTemp[0];
-                    Dest.Type=mq::datatypes::pStringType;
-                    return true;
-            }
+    virtual bool GetMember(MQVarPtr VarPtr, const char* Member, char* Index, MQTypeVar& Dest) override
+    {
+	    MQTypeMember* pMember = MQ2TwistType::FindMember(Member);
+        if (!pMember)
             return false;
-        }
 
-        bool ToString(MQVarPtr VarPtr, PCHAR Destination) override
-        {
-            if (bTwist)
-                strcpy_s(Destination,MAX_STRING,"TRUE");
-            else
-                strcpy_s(Destination,MAX_STRING,"FALSE");
+        switch(static_cast<TwistMembers>(pMember->ID))
+		{
+		case TwistMembers::Twisting:
+            /* Returns: bool
+            0 - Not Twisting
+            1 - Twisting
+            */
+            Dest.Int=bTwist;
+            Dest.Type=mq::datatypes::pBoolType;
+            return true;
+        case TwistMembers::Next:
+            /* Returns: int
+            0 - Not Twisting
+            -1 - Casting Item
+            1-9 - Current Gem
+            */
+            Dest.Int=HoldSong ? HoldSong : Song[CurrSong-1];
+            if (Dest.Int>NUM_SPELL_GEMS-1)
+                Dest.Int = -1;
+            if (!bTwist)
+                Dest.Int = 0;
+            Dest.Type=mq::datatypes::pIntType;
+            return true;
+        case TwistMembers::Current:
+            Dest.Int=HoldSong ? HoldSong : Song[PrevSong-1];
+            if (Dest.Int>NUM_SPELL_GEMS-1)
+                Dest.Int = -1;
+            if (!bTwist)
+                Dest.Int = 0;
+            Dest.Type=mq::datatypes::pIntType;
+            return true;
+        case TwistMembers::List:
+            /* Returns: string
+            Space separated list of gem and item #'s being twisted, in order
+            */
+            int a;
+            char szTemp[MAX_STRING] = {0};
+            char MQ2TwistTypeTemp[MAX_STRING] = {0};
+            for (a=0; a<NumSongs; a++) {
+                sprintf_s(szTemp, "%d ", Song[a]);
+                strcat_s(MQ2TwistTypeTemp, szTemp);
+            }
+            strcpy_s(DataTypeTemp, MQ2TwistTypeTemp);
+            Dest.Ptr=&DataTypeTemp[0];
+            Dest.Type=mq::datatypes::pStringType;
             return true;
         }
+        return false;
+    }
 
-        bool FromData(MQVarPtr& VarPtr, MQTypeVar& Source) override
-        {
-            return false;
-        }
-
-        virtual bool FromString(MQVarPtr& VarPtr, const char* Source) override
-        {
-            return false;
-        }
+    bool ToString(MQVarPtr VarPtr, PCHAR Destination) override
+    {
+        if (bTwist)
+            strcpy_s(Destination,MAX_STRING,"TRUE");
+        else
+            strcpy_s(Destination,MAX_STRING,"FALSE");
+        return true;
+    }
 };
+MQ2TwistType* pTwistType = nullptr;
 
 bool dataTwist(const char* szName, MQTypeVar& Dest)
 {
-    Dest.DWord=1;
-    Dest.Type=pTwistType;
+    Dest.DWord = 1;
+    Dest.Type = pTwistType;
     return true;
 }
 
