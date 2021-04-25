@@ -294,7 +294,7 @@ Changes:
 #include <vector>
 
 PreSetup("MQ2Twist");
-PLUGIN_VERSION(3.0);
+PLUGIN_VERSION(3.1);
 
 constexpr auto CLICK_START = 21;
 constexpr auto CLICK_MAX = 20;                  // Change this if you want more or less available clickies
