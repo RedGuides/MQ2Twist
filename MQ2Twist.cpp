@@ -611,7 +611,7 @@ void SingCommand(PSPAWNINFO pChar, PCHAR szLine)
         WriteChatf("\arMQ2Twist\au::\atHolding Twist and casting gem \ag%d\at.", HoldSong);
         MQ2TwistDoCommand(pChar,"/stopsong");
         if (Index > NUM_SPELL_GEMS) { //item?
-            fInd = ItemClick.size();
+            fInd = (unsigned int)ItemClick.size();
             for(x=0; x<ItemClick.size(); x++) {
                 if(Index == ItemClick[x].index - CLICK_START) {
                     fInd = x;
@@ -919,7 +919,7 @@ void TwistCommand(PSPAWNINFO pChar, PCHAR szLine)
             bool IsDisabled = false;
             unsigned int x;
             if (Song[NumSongs]>NUM_SPELL_GEMS) {
-                fInd = ItemClick.size();
+                fInd = (unsigned int)ItemClick.size();
                 for(x=0; x<ItemClick.size(); x++) {
                     if(ItemClick[x].index == Song[NumSongs]) {
                         if(ItemClick[x].disabled)
@@ -1173,7 +1173,7 @@ PLUGIN_API VOID OnPulse(VOID)
             }
             else {
                 unsigned int itemID;
-                itemID = ItemClick.size();
+                itemID = (unsigned int)ItemClick.size();
                 for(fInd=0; fInd<ItemClick.size(); fInd++) {
                     if(ItemClick[fInd].index == SongTodo) {
                         itemID = fInd;
@@ -1272,7 +1272,7 @@ PLUGIN_API VOID OnPulse(VOID)
             }
             else {
                 unsigned int itemID;
-                itemID = ItemClick.size();
+                itemID = (unsigned int)ItemClick.size();
                 for(fInd=0; fInd<ItemClick.size(); fInd++) {
                     if(ItemClick[fInd].index == SongTodo) {
                         itemID = fInd;
