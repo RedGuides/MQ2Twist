@@ -525,8 +525,8 @@ template <unsigned int _Size>LPSTR Safe_itoa_s(int _Value,char(&_Buffer)[_Size],
 }
 
 void Update_INIFileName() {
-    if (GetCharInfo())
-        sprintf_s(INIFileName,"%s\\%s_%s.ini", gPathConfig, EQADDR_SERVERNAME, GetCharInfo()->Name);
+    if (pLocalPC)
+        sprintf_s(INIFileName,"%s\\%s_%s.ini", gPathConfig, GetServerShortName(), pLocalPC->Name);
     else
         sprintf_s(INIFileName,"%s\\MQ2Twist.ini", gPathConfig);
 }
