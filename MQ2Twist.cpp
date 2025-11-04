@@ -135,7 +135,7 @@
       ----------------------------
 
 Changes:
-	// 2.0 - Eqmule 07-22-2016 - Added string safety.
+    // 2.0 - Eqmule 07-22-2016 - Added string safety.
    02-13-10
       Added silent switch to start/stop commands.
    10-13-09
@@ -240,7 +240,7 @@ Changes:
    05-01-04
       Fixed problem with using pchar before state->ingame causing CTD on eq load (thanks MTBR)
       Fixed vc6 compile error w/ reset_itemclick_timers
-      Replaced various incantations of pChar and pSpawn with GetCharInfo()
+      Replaced various incantations of pChar and pSpawn with pLocalPC
       Fixed /circle behavior w/ unspecified y/x
       Fixed /circle on when already circling and you want to update loc
       Added output of parsed circle parameters on start.
@@ -317,7 +317,6 @@ class _ITEMCLICK
         ~_ITEMCLICK(){};
         _ITEMCLICK &operator=(const _ITEMCLICK &in);
         int operator==(const _ITEMCLICK &in) const;
-        int operator<(const _ITEMCLICK &in) const;
 };
 
 _ITEMCLICK::_ITEMCLICK()
@@ -370,11 +369,6 @@ int _ITEMCLICK::operator==(const _ITEMCLICK &in) const
     return 1;
 }
 
-int _ITEMCLICK::operator<(const _ITEMCLICK &in) const
-{
-    return(this->slot < in.slot);
-}
-
 std::vector<_ITEMCLICK> ItemClick;
 
 bool MQ2TwistEnabled = false;
@@ -402,7 +396,7 @@ char SwappedOutItem[MAX_STRING];
 char SwappedOutSlot[MAX_STRING];
 bool DebugMode = false, Initialized = false;
 
-VOID WriteDebug(char *szFormat, ...)
+void WriteDebug(const char* szFormat, ...)
 {
     char szBuffer[MAX_STRING] = {0};
     if(!DebugMode)
@@ -440,55 +434,55 @@ BOOL ItemFound(char *ItemName)
     return true;
 }
 
-void MQ2TwistDoCommand(PSPAWNINFO pChar, PCHAR szLine)
+void MQ2TwistDoCommand(PlayerClient* pChar, const char* szLine)
 {
     WriteDebug("MQ2Twist::MQ2TwistDoCommand(pChar, %s)", szLine);
-	HideDoCommand(pChar, szLine, false); // We want to execute these commands immediately... If for some reason we want the commands delayed we will need to add a bool to deal with it
+    HideDoCommand(pChar, szLine, false); // We want to execute these commands immediately... If for some reason we want the commands delayed we will need to add a bool to deal with it
 }
 
 void DoSwapOut()
 {
-	if (GetCharInfo() && GetCharInfo()->pSpawn)
-	{
-		char szTemp[MAX_STRING];
-		if (SwappedOutItem[0])
-		{
-			sprintf_s(szTemp, "/exchange \"%s\" %s", SwappedOutItem, SwappedOutSlot);
-			WriteDebug("MQ2Twist::DoSwapOut() = '%s'", szTemp);
-			MQ2TwistDoCommand(GetCharInfo()->pSpawn, szTemp);
-			SwappedOutItem[0] = 0;
-		}
-	}
+    if (pLocalPC && pLocalPlayer)
+    {
+        char szTemp[MAX_STRING];
+        if (SwappedOutItem[0])
+        {
+            sprintf_s(szTemp, "/exchange \"%s\" %s", SwappedOutItem, SwappedOutSlot);
+            WriteDebug("MQ2Twist::DoSwapOut() = '%s'", szTemp);
+            MQ2TwistDoCommand(pLocalPlayer, szTemp);
+            SwappedOutItem[0] = 0;
+        }
+    }
 }
 
 void DoSwapIn(unsigned int Index)
 {
-	if (GetCharInfo() && GetCharInfo()->pSpawn)
-	{
-	    char szTemp[MAX_STRING];
+    if (pLocalPC && pLocalPlayer)
+    {
+        char szTemp[MAX_STRING];
 
-	    WriteDebug("MQ2Twist::DoSwapIn(%d)", Index);
-	    if(Index >= ItemClick.size()) {
-	        WriteDebug("MQ2Twist::DoSwapIn(%d) = Item not found in array, returning!", Index);
-	        return;
-	    }
-	    _ITEMCLICK& vr = ItemClick[Index];
-	    if (!_stricmp(vr.slot,"AA")) {
-	        WriteDebug("MQ2Twist::DoSwapIn(%d) = Item entry is AA, returning!", Index);
-	        return;
-	    }
-	    if (_strnicmp(vr.slot,"DISABLED",8)) {
-	        sprintf_s(szTemp,"${Me.Inventory[%s].Name}",vr.slot);
-	        ParseMacroData(szTemp, sizeof(szTemp));
-	        strcpy_s(SwappedOutItem,szTemp);
-	        strcpy_s(SwappedOutSlot,vr.slot);
-	        WriteDebug("MQ2Twist::DoSwapIn(%d) = '%s'", Index, szTemp);
-	        sprintf_s(szTemp,"/exchange \"%s\" %s",vr.name,vr.slot);
-	        MQ2TwistDoCommand(GetCharInfo()->pSpawn, szTemp);
-	    }
-	    else
-	        WriteDebug("MQ2Twist::DoSwapIn(%d) = Fell through, no action taken!", Index);
-	}
+        WriteDebug("MQ2Twist::DoSwapIn(%d)", Index);
+        if (Index >= ItemClick.size()) {
+            WriteDebug("MQ2Twist::DoSwapIn(%d) = Item not found in array, returning!", Index);
+            return;
+        }
+        _ITEMCLICK& vr = ItemClick[Index];
+        if (!_stricmp(vr.slot, "AA")) {
+            WriteDebug("MQ2Twist::DoSwapIn(%d) = Item entry is AA, returning!", Index);
+            return;
+        }
+        if (_strnicmp(vr.slot, "DISABLED", 8)) {
+            sprintf_s(szTemp, "${Me.Inventory[%s].Name}", vr.slot);
+            ParseMacroData(szTemp, sizeof(szTemp));
+            strcpy_s(SwappedOutItem, szTemp);
+            strcpy_s(SwappedOutSlot, vr.slot);
+            WriteDebug("MQ2Twist::DoSwapIn(%d) = '%s'", Index, szTemp);
+            sprintf_s(szTemp, "/exchange \"%s\" %s", vr.name, vr.slot);
+            MQ2TwistDoCommand(pLocalPlayer, szTemp);
+        }
+        else
+            WriteDebug("MQ2Twist::DoSwapIn(%d) = Fell through, no action taken!", Index);
+    }
 }
 
 bool GemReady(unsigned int GemNum) // Gem 1 to NUM_SPELL_GEMS
@@ -515,15 +509,6 @@ void Reset_ItemClick_Timers()
         SongNextCast[i] = 0;
 }
 
-template <unsigned int _Size>LPSTR Safe_itoa_s(int _Value,char(&_Buffer)[_Size], int _Radix)
-{
-	errno_t err = _itoa_s(_Value, _Buffer, _Radix);
-	if (!err) {
-		return _Buffer;
-	}
-	return "";
-}
-
 void Update_INIFileName() {
     if (pLocalPC)
         sprintf_s(INIFileName,"%s\\%s_%s.ini", gPathConfig, GetServerShortName(), pLocalPC->Name);
@@ -539,16 +524,16 @@ void Load_MQ2Twist_INI()
 
     Update_INIFileName();
 
-    CAST_TIME = GetPrivateProfileInt("MQ2Twist","Delay",33,INIFileName);
-    WritePrivateProfileString("MQ2Twist","Delay",Safe_itoa_s(CAST_TIME,szTemp,10),INIFileName);
-    quiet = GetPrivateProfileInt("MQ2Twist","Quiet",0,INIFileName)? 1 : 0;
-    WritePrivateProfileString("MQ2Twist","Quiet",Safe_itoa_s(quiet,szTemp,10),INIFileName);
+    CAST_TIME = GetPrivateProfileInt("MQ2Twist", "Delay", 33, INIFileName);
+    WritePrivateProfileInt("MQ2Twist", "Delay", CAST_TIME, INIFileName);
+    quiet = GetPrivateProfileBool("MQ2Twist", "Quiet", false, INIFileName);
+    WritePrivateProfileBool("MQ2Twist", "Quiet", quiet, INIFileName);
 
-    LONGSONG_ADJUST = GetPrivateProfileInt("MQ2Twist","Adjust",1,INIFileName);
-    WritePrivateProfileString("MQ2Twist","Adjust",Safe_itoa_s(LONGSONG_ADJUST,szTemp,10),INIFileName);
+    LONGSONG_ADJUST = GetPrivateProfileInt("MQ2Twist", "Adjust", 1, INIFileName);
+    WritePrivateProfileInt("MQ2Twist", "Adjust", LONGSONG_ADJUST, INIFileName);
 
-    RECAST_ADJUST = GetPrivateProfileInt("MQ2Twist","Recast",0,INIFileName);
-    WritePrivateProfileString("MQ2Twist","Recast",Safe_itoa_s(RECAST_ADJUST,szTemp,10),INIFileName);
+    RECAST_ADJUST = GetPrivateProfileInt("MQ2Twist", "Recast", 0, INIFileName);
+    WritePrivateProfileInt("MQ2Twist", "Recast", RECAST_ADJUST, INIFileName);
 
     ItemClick.clear();
     for (int i=CLICK_START;i<CLICK_START+CLICK_MAX;i++) {
@@ -577,15 +562,15 @@ void Load_MQ2Twist_INI()
         }
         // Write the values above back to disk, mostly to initialize it for easy editing.
         sprintf_s(szKey, "%d_CastTime", i);
-        WritePrivateProfileString("MQ2Twist",szKey,Safe_itoa_s(ic.cast_time,szTemp,10),INIFileName);
+        WritePrivateProfileInt("MQ2Twist", szKey, ic.cast_time, INIFileName);
         // If the CastTime is set to -1 in the INI file, use the default.
-        ic.cast_time = ic.cast_time==-1 ? CAST_TIME : ic.cast_time;
+        ic.cast_time = ic.cast_time == -1 ? CAST_TIME : ic.cast_time;
         sprintf_s(szKey, "%d_ReCastTime", i);
-        WritePrivateProfileString("MQ2Twist",szKey,Safe_itoa_s(ic.recast,szTemp,10),INIFileName);
+        WritePrivateProfileInt("MQ2Twist", szKey, ic.recast, INIFileName);
         sprintf_s(szKey, "%d_Name", i);
-        WritePrivateProfileString("MQ2Twist",szKey,ic.name,INIFileName);
+        WritePrivateProfileString("MQ2Twist", szKey, ic.name, INIFileName);
         sprintf_s(szKey, "%d_Slot", i);
-        WritePrivateProfileString("MQ2Twist",szKey,ic.slot,INIFileName);
+        WritePrivateProfileString("MQ2Twist", szKey, ic.slot, INIFileName);
         ic.index = i;
         ItemClick.push_back(ic);
         DebugSpewAlways("Initializing MQ2Twist: Processed section MQ2Twist (%d)", i);
@@ -593,10 +578,10 @@ void Load_MQ2Twist_INI()
     }
 }
 
-void SingCommand(PSPAWNINFO pChar, PCHAR szLine)
+void SingCommand(PlayerClient* pChar, const char* szLine)
 {
-    char szTemp[MAX_STRING]={0};
-    char szMsg[MAX_STRING]={0};
+    char szTemp[MAX_STRING]={};
+    char szMsg[MAX_STRING]={};
     int Index;
     unsigned int fInd;
     unsigned int x;
@@ -810,7 +795,7 @@ void TwistCommand(PSPAWNINFO pChar, PCHAR szLine)
                 WriteChatf("\arMQ2Twist\au::\ayWARNING: \arDelay specified is less than standard song cast time.");
             CAST_TIME=i;
             Update_INIFileName();
-            WritePrivateProfileString("MQ2Twist","Delay",Safe_itoa_s(CAST_TIME, szTemp, 10),INIFileName);
+            WritePrivateProfileInt("MQ2Twist", "Delay", CAST_TIME, INIFileName);
             WriteChatf("\arMQ2Twist\au::\atSet delay to \ag%d\at, INI updated.", CAST_TIME);
         }
         else
@@ -819,9 +804,9 @@ void TwistCommand(PSPAWNINFO pChar, PCHAR szLine)
     }
 
     if (!_strnicmp(szTemp,"quiet", 5)) {
-        quiet=!quiet;
-        WritePrivateProfileString("MQ2Twist","Quiet",Safe_itoa_s(quiet,szTemp,10),INIFileName);
-        WriteChatf("\arMQ2Twist\au::\atNow being %s\at.",quiet ? "\ayquiet" : "\agnoisy");
+        quiet = !quiet;
+        WritePrivateProfileBool("MQ2Twist", "Quiet", quiet, INIFileName);
+        WriteChatf("\arMQ2Twist\au::\atNow being %s\at.", quiet ? "\ayquiet" : "\agnoisy");
         return;
     }
 
@@ -831,7 +816,7 @@ void TwistCommand(PSPAWNINFO pChar, PCHAR szLine)
             i=atoi(szTemp);
             LONGSONG_ADJUST=i;
             Update_INIFileName();
-            WritePrivateProfileString("MQ2Twist","Adjust",Safe_itoa_s(LONGSONG_ADJUST, szTemp, 10),INIFileName);
+            WritePrivateProfileInt("MQ2Twist", "Adjust", LONGSONG_ADJUST, INIFileName);
             WriteChatf("\arMQ2Twist\au::\atLong song adjustment set to \ag%d\at, INI updated.", LONGSONG_ADJUST);
         }
         else
@@ -845,7 +830,7 @@ void TwistCommand(PSPAWNINFO pChar, PCHAR szLine)
             i=atoi(szTemp);
             RECAST_ADJUST=i;
             Update_INIFileName();
-            WritePrivateProfileString("MQ2Twist","Recast",Safe_itoa_s(RECAST_ADJUST, szTemp, 10),INIFileName);
+            WritePrivateProfileInt("MQ2Twist", "Recast", RECAST_ADJUST, INIFileName);
             WriteChatf("\arMQ2Twist\au::\atRecast delay adjustment set to \ag%d\at, INI updated.", RECAST_ADJUST);
         }
         else
@@ -991,18 +976,18 @@ bool CheckCharState()
     if (!bTwist)
         return false;
 
-    if (GetCharInfo()) {
-        if (!GetCharInfo()->pSpawn)
+    if (pLocalPC) {
+        if (!pLocalPlayer)
             return false;
-        if (GetCharInfo()->Stunned==1)
+        if (pLocalPC->Stunned==1)
             return false;
-        switch (GetCharInfo()->standstate) {
+        switch (pLocalPC->standstate) {
             case STANDSTATE_SIT:
                 WriteChatf("\arMQ2Twist\au::\ayStopping Twist.");
                 bTwist = false;
                 return false;
             case STANDSTATE_FEIGN:
-                MQ2TwistDoCommand(GetCharInfo()->pSpawn,"/stand");
+                MQ2TwistDoCommand(pLocalPlayer,"/stand");
                 return false;
             case STANDSTATE_DEAD:
                 WriteChatf("\arMQ2Twist\au::\ayStopping Twist.");
@@ -1017,8 +1002,8 @@ bool CheckCharState()
         }
     }
 
-	// Don't try to twist if the casting window is up, it implies the previous song
-	// is still casting, or the user is manually casting a song between our twists
+    // Don't try to twist if the casting window is up, it implies the previous song
+    // is still casting, or the user is manually casting a song between our twists
     if (pCastingWnd && pCastingWnd->IsVisible() == true)
         return false;
 
@@ -1044,13 +1029,13 @@ public:
 
     virtual bool GetMember(MQVarPtr VarPtr, const char* Member, char* Index, MQTypeVar& Dest) override
     {
-	    MQTypeMember* pMember = MQ2TwistType::FindMember(Member);
+        MQTypeMember* pMember = MQ2TwistType::FindMember(Member);
         if (!pMember)
             return false;
 
         switch(static_cast<TwistMembers>(pMember->ID))
-		{
-		case TwistMembers::Twisting:
+        {
+        case TwistMembers::Twisting:
             /* Returns: bool
             0 - Not Twisting
             1 - Twisting
@@ -1158,7 +1143,7 @@ PLUGIN_API VOID OnPulse(VOID)
     Found = true;
     if ((HoldSong>0) || ((NumSongs==1) && !altTwist)) {
         WriteDebug("MQ2Twist::Pulse - Single Song");
-        if (CastDue<0 || (((CastDue-GetTime()) <= 0) && (GetCharInfo()->pSpawn->CastingData.SpellID == -1))) {
+        if (CastDue<0 || (((CastDue-GetTime()) <= 0) && (pLocalPlayer->CastingData.SpellID == -1))) {
             int SongTodo = HoldSong ? HoldSong : Song[0];
             if (SongTodo <= NUM_SPELL_GEMS) {
                 if(!GemReady(SongTodo)) {
@@ -1168,7 +1153,7 @@ PLUGIN_API VOID OnPulse(VOID)
                 DebugSpew("MQ2Twist::Pulse - Single Song (Casting Gem %d)", SongTodo);
                 WriteDebug("MQ2Twist::Pulse - Single Song (Casting Gem %d)", SongTodo);
                 sprintf_s(szTemp,"/multiline ; /stopsong ; /cast %d", SongTodo);
-                MQ2TwistDoCommand(GetCharInfo()->pSpawn, szTemp);
+                MQ2TwistDoCommand(pLocalPlayer, szTemp);
                 CastDue = GetTime()+CAST_TIME;
             }
             else {
@@ -1206,7 +1191,7 @@ PLUGIN_API VOID OnPulse(VOID)
                         }
                     }
                     if(Found) {
-                        MQ2TwistDoCommand(GetCharInfo()->pSpawn, szTemp);
+                        MQ2TwistDoCommand(pLocalPlayer, szTemp);
                         ItemClick[itemID].castdue = ItemClick[itemID].recast ? (GetTime()+ItemClick[itemID].cast_time+ItemClick[itemID].recast) : (GetTime()+CAST_TIME);
                         CastDue = ItemClick[itemID].castdue;
                     }
@@ -1239,7 +1224,7 @@ PLUGIN_API VOID OnPulse(VOID)
                         PrepNextSong();
                         return;
                     }
-                    MQ2TwistDoCommand(GetCharInfo()->pSpawn, szTemp);
+                    MQ2TwistDoCommand(pLocalPlayer, szTemp);
                     pSpell=GetSpellByID(GetPcProfile()->MemorizedSpells[Song[CurrSong-1]-1]);
                     if(!pSpell) {
                         WriteChatf("\arMQ2Twist\au::\arSongs not present - suspending twist.  /twist to resume.");
@@ -1306,8 +1291,8 @@ PLUGIN_API VOID OnPulse(VOID)
                         }
                     }
                     if(Found) {
-                        WriteDebug("MQ2Twist::Pulse - Calling MQ2TwistDoCommand(GetCharInfo()->pSpawn, %s)", szTemp);
-                        MQ2TwistDoCommand(GetCharInfo()->pSpawn, szTemp);
+                        WriteDebug("MQ2Twist::Pulse - Calling MQ2TwistDoCommand(pLocalPlayer, %s)", szTemp);
+                        MQ2TwistDoCommand(pLocalPlayer, szTemp);
                         ItemClick[itemID].castdue = ItemClick[itemID].recast ? (GetTime()+ItemClick[itemID].cast_time+ItemClick[itemID].recast) : (GetTime()+CAST_TIME);
                         CastDue = GetTime()+ItemClick[itemID].cast_time;
                     }
