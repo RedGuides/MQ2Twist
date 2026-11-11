@@ -10,21 +10,21 @@ Returns information about the current twist queue
 
 ## Members
 <!--dt-members-start-->
-### {{ renderMember(type='bool', name='Twisting') }}
+/// member | bool Twisting
+Returns TRUE if currently twisting, FALSE if not and NULL if plugin not loaded.
+///
 
-:   Returns TRUE if currently twisting, FALSE if not and NULL if plugin not loaded.
+/// member | int Current
+Returns the current gem being sung, -1 for item or 0 if not twisting
+///
 
-### {{ renderMember(type='int', name='Current') }}
+/// member | int Next
+Returns the next gem to be sung, -1 for item or 0 if not twisting
+///
 
-:   Returns the current gem being sung, -1 for item or 0 if not twisting
-
-### {{ renderMember(type='int', name='Next') }}
-
-:   Returns the next gem to be sung, -1 for item or 0 if not twisting
-
-### {{ renderMember(type='string', name='List') }}
-
-:   Returns the twist sequence in a format suitable for /twist.
+/// member | string List
+Returns the twist sequence in a format suitable for /twist.
+///
 
 <!--dt-members-end-->
 

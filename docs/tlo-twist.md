@@ -10,9 +10,9 @@ Holds a datatype which is probably what you're looking for.
 
 ## Forms
 <!--tlo-forms-start-->
-### {{ renderMember(type='twist', name='Twist') }}
-
-:   Returns TRUE if currently twisting, FALSE if not and NULL if plugin not loaded.
+/// member | twist Twist
+Returns TRUE if currently twisting, FALSE if not and NULL if plugin not loaded.
+///
 
 <!--tlo-forms-end-->
 
